@@ -21,46 +21,39 @@ module MEM_STAGE(
     end
   
   
-    reg [`MEM_latch_WIDTH-1:0] MEM_latch; 
-
-
-    wire[`MEM_latch_WIDTH-1:0] MEM_latch_contents; 
-
-    wire [`DBITS-1:0] rd_val_MEM; 
-
-
-    wire [`DBITS-1:0] memaddr_MEM; 
-  
-    wire [`INSTBITS-1:0] inst_MEM; 
-    wire [`DBITS-1:0] PC_MEM;
-    wire [`DBITS-1:0] aluout_MEM; 
-    wire [`DBITS-1:0] regval2_MEM;
+    reg  [`MEM_latch_WIDTH-1:0] MEM_latch; 
+    wire [`MEM_latch_WIDTH-1:0] MEM_latch_contents; 
+    wire [`DBITS-1:0]           rd_val_MEM;   // 32
+    wire [`DBITS-1:0]           memaddr_MEM;  // 32
+    wire [`INSTBITS-1:0]        inst_MEM; 
+    wire [`DBITS-1:0]           PC_MEM;
+    wire [`DBITS-1:0]           aluout_MEM;  // memaddr computed in AGEX
+    wire [`DBITS-1:0]           regval2_MEM; // register to be stored in mem, RT(regval2) of SW
   
     wire rd_mem_MEM;
     wire wr_mem_MEM;
     wire wr_reg_MEM;
-    wire [`REGNOBITS-1:0] wregno_MEM;
 
-    wire [`DBITS-1:0 ] regval_MEM; //need to fill out 
-
+    wire [`REGNOBITS-1:0]        wregno_MEM;
+    wire [`DBITS-1:0 ]           regval_MEM; // need to fill out 
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_MEM;
 
+    // new work
+    assign memaddr_MEM = aluout_MEM;
 
     // Read from D-MEM  (read and write D-MEM code are completed for you )
-    assign rd_val_MEM = (memaddr_MEM == `ADDRKEY) ? {{(`DBITS-`KEYBITS){1'b0}}, ~KEY} :
-  								dmem[memaddr_MEM[`DMEMADDRBITS-1:`DMEMWORDBITS]];
-
+    assign rd_val_MEM = (memaddr_MEM == `ADDRKEY) ? 
+            {{(`DBITS-`KEYBITS){1'b0}}, ~KEY} : dmem[memaddr_MEM[`DMEMADDRBITS-1:`DMEMWORDBITS]]; // DMEMWORDBITS = 2
   
     // Write to D-MEM
     always @ (posedge clk) begin
-        if(wr_mem_MEM)
+        if (wr_mem_MEM)
             dmem[memaddr_MEM[`DMEMADDRBITS-1:`DMEMWORDBITS]] <= regval2_MEM;
     end
  
 
    // **TODO: Complete the rest of the pipeline 
 
-    
    assign MEM_latch_out = MEM_latch; 
 
     assign {
@@ -95,7 +88,7 @@ module MEM_STAGE(
     always @ (posedge clk or posedge reset) begin
         // this code need to be completed 
         if(reset) begin
-            MEM_latch <={`MEM_latch_WIDTH{1'b0}}; 
+            MEM_latch <= {`MEM_latch_WIDTH{1'b0}}; 
         end else begin
             MEM_latch <= MEM_latch_contents;
         end 

@@ -36,14 +36,14 @@ module AGEX_STAGE(
     wire rd_mem_AGEX;
     wire wr_mem_AGEX;
     wire wr_reg_AGEX;
-    wire [`REGNOBITS-1:0] wregno_AGEX;
 
-    reg br_cond_AGEX;
-    reg [`DBITS-1:0] aluout_AGEX; 
+    reg  br_cond_AGEX;
+    reg  [`DBITS-1:0]             aluout_AGEX; 
 
-    wire[`DBITS-1:0] pctarget_AGEX; 
-  
-    wire[`BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
+    wire [`REGNOBITS-1:0]         wregno_AGEX;
+    wire [`DBITS-1:0]             pctarget_AGEX; 
+    wire [ `BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
+
     // **TODO: Complete the rest of the pipeline 
  
   
@@ -53,22 +53,39 @@ module AGEX_STAGE(
             `OP1_BLT : br_cond_AGEX = (regval1_AGEX < regval2_AGEX);
             `OP1_BLE : br_cond_AGEX = (regval1_AGEX <= regval2_AGEX);
             `OP1_BNE : br_cond_AGEX = (regval1_AGEX != regval2_AGEX);
-             default : br_cond_AGEX = 1'b0;
+            default  : br_cond_AGEX = 1'b0;
         endcase
     end
 
     always @ (op1_AGEX or op2_AGEX or regval1_AGEX or regval2_AGEX or sxt_imm_AGEX) begin
         if (op1_AGEX == `OP1_ALUR)
+            // ALU instructions, RD = RS (regval1) <OP2> RT (regval2)
             case (op2_AGEX)
-        		`OP2_EQ	 : aluout_AGEX = {31'b0, regval1_AGEX == regval2_AGEX};
-        		`OP2_LT	 : aluout_AGEX = {31'b0, regval1_AGEX < regval2_AGEX};
-        	   // **TODO:  complete the other OP2_*s
-        	   // ...
-        		default	 : aluout_AGEX = {`DBITS{1'b0}};
+                // Conditional executions
+        		`OP2_EQ	  : aluout_AGEX = {31'b0, regval1_AGEX == regval2_AGEX};
+        		`OP2_LT	  : aluout_AGEX = {31'b0, regval1_AGEX <  regval2_AGEX};
+                `OP2_LE   : aluout_AGEX = {31'b0, regval1_AGEX <= regval2_AGEX};
+                `OP2_NE   : aluout_AGEX = {31'b0, regval1_AGEX != regval2_AGEX};
+
+        	   // **TODO :  complete the other OP2_*s
+                `OP2_ADD  : aluout_AGEX = regval1_AGEX + regval2_AGEX;
+                `OP2_AND  : aluout_AGEX = regval1_AGEX & regval2_AGEX;
+                `OP2_OR   : aluout_AGEX = regval1_AGEX | regval2_AGEX;
+                `OP2_XOR  : aluout_AGEX = regval1_AGEX ^ regval2_AGEX;
+                `OP2_SUB  : aluout_AGEX = regval1_AGEX - regval2_AGEX;
+                `OP2_NAND : aluout_AGEX = ~(regval1_AGEX & regval2_AGEX);
+                `OP2_NXOR : aluout_AGEX = ~(regval1_AGEX ^ regval2_AGEX);
+                `OP2_LSHF : aluout_AGEX = regval1_AGEX << regval2_AGEX;
+                `OP2_RSHF : aluout_AGEX = regval1_AGEX >> regval2_AGEX;
+
+        		default	  : aluout_AGEX = {`DBITS{1'b0}};
         	endcase
 
-        else if(op1_AGEX == `OP1_LW || op1_AGEX == `OP1_SW || op1_AGEX == `OP1_ADDI)
-        	aluout_AGEX= regval1_AGEX + sxt_imm_AGEX;
+        
+        // With immediate instructions, RT = IMM + RS(regval1)
+        
+        else if(op1_AGEX == `OP1_LW || op1_AGEX == `OP1_SW || op1_AGEX == `OP1_ADDI) // calculates Memory Address
+        	aluout_AGEX = regval1_AGEX + sxt_imm_AGEX;
         else if(op1_AGEX == `OP1_ANDI)
         	aluout_AGEX = regval1_AGEX & sxt_imm_AGEX;
         else if(op1_AGEX == `OP1_ORI)

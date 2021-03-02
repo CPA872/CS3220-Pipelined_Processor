@@ -49,6 +49,7 @@
 `define OP2_LT    8'b00001001
 `define OP2_LE    8'b00001010
 `define OP2_NE    8'b00001011
+
 `define OP2_ADD   8'b00100000
 `define OP2_AND   8'b00100100
 `define OP2_OR    8'b00100101

@@ -46,7 +46,7 @@ module WB_STAGE(
             inst_WB,
             PC_WB,
             memaddr_WB,
-            regval_WB,
+            regval_WB,  // 
             regval2_WB,
             wr_mem_WB,
             wr_reg_WB,
@@ -56,7 +56,7 @@ module WB_STAGE(
     } = from_MEM_latch; 
         
     // write register by sending data to the DE stage 
-        
+    // regs[3] = 32'hFFFFFFFF;    
         
     // **TODO: Write the code for LEDR here
 

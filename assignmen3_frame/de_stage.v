@@ -53,16 +53,18 @@ module DE_STAGE(
     assign rs_DE  = inst_DE[ 7: 4];
     assign rt_DE  = inst_DE[ 3: 0];
 
+    // complete the rest of instruction decoding 
     //                          BEQ                   BLT                     BLE                     BNE
     assign is_br_DE  = (op1_DE == 6'b001000 || op1_DE == 6'b001001 || op1_DE == 6'b001010 || op1_DE == 6'b001011);
     assign is_jmp_DE = (op1_DE == 6'b001100); // JAL
     assign rd_mem_DE = (op1_DE == 6'b010010); // LW
     assign wr_mem_DE = (op1_DE == 6'b011010); // SW
-    assign wr_reg_DE = (!is_br_DE && !is_jmp_DE && !wr_mem_DE);   
-    // assign wregno_DE =  
+    assign wr_reg_DE = !is_br_DE && !is_jmp_DE && !wr_mem_DE;
+    assign wregno_DE = (op1_DE == 6'b000000) ? rd_DE : rt_DE; // EXT instructions write to rd
 
-
-    // complete the rest of instruction decoding 
+    assign regval1_DE = regs[rs_DE];
+    assign regval2_DE = regs[rt_DE];
+    assign sxt_imm_DE = { {16{imm_DE[15]}}, imm_DE };
 
     // assign wire to send the contents of DE latch to other pipeline stages  
     assign DE_latch_out = DE_latch; 
@@ -118,6 +120,8 @@ module DE_STAGE(
             regs[14] <= {`DBITS{1'b0}};
             regs[15] <= {`DBITS{1'b0}};
         end 
+
+        
     // need to complete register write 
     // else if ... 
     end

@@ -44,6 +44,30 @@ module AGEX_STAGE(
     wire [`DBITS-1:0]             pctarget_AGEX; 
     wire [ `BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
 
+
+// branch target needs to be computed here 
+// computed branch target needs to send to other pipeline stages
+
+    assign {
+            inst_AGEX,
+            PC_AGEX,
+            pcplus_AGEX,
+            op1_AGEX,
+            op2_AGEX,
+
+            regval1_AGEX,
+            regval2_AGEX,
+            sxt_imm_AGEX,                                
+            is_br_AGEX,
+            is_jmp_AGEX,
+            rd_mem_AGEX,
+            wr_mem_AGEX,
+            wr_reg_AGEX,
+            wregno_AGEX, 
+                  // more signals might need
+            bus_canary_AGEX
+    } = from_DE_latch; 
+    
     // **TODO: Complete the rest of the pipeline 
  
   
@@ -96,30 +120,6 @@ module AGEX_STAGE(
         else
         	aluout_AGEX = {`DBITS{1'b0}};
     end
-
-// branch target needs to be computed here 
-// computed branch target needs to send to other pipeline stages
-
-    assign {
-            inst_AGEX,
-            PC_AGEX,
-            pcplus_AGEX,
-            op1_AGEX,
-            op2_AGEX,
-
-            regval1_AGEX,
-            regval2_AGEX,
-            sxt_imm_AGEX,                                
-            is_br_AGEX,
-            is_jmp_AGEX,
-            rd_mem_AGEX,
-            wr_mem_AGEX,
-            wr_reg_AGEX,
-            wregno_AGEX, 
-                  // more signals might need
-            bus_canary_AGEX
-    } = from_DE_latch; 
-    
  
     assign AGEX_latch_contents = {
             inst_AGEX,

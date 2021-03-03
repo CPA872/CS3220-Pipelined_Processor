@@ -19,11 +19,13 @@ module WB_STAGE(
     wire [`DBITS-1:0]    memaddr_WB; 
     wire [`DBITS-1:0]    regval_WB; 
     wire [`DBITS-1:0]    regval2_WB;
+    wire [`DBITS-1:0]    wr_reg_val_WB;   
 
     wire wr_mem_WB;
     wire wr_reg_WB;
     wire [`REGNOBITS-1:0] wregno_WB;
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_WB;
+    wire [`from_WB_to_DE_WIDTH-1:0] WB_latch_contents;
 
     reg [23:0] HEX_out; 
     reg [9:0] LEDR_out; 
@@ -39,26 +41,38 @@ module WB_STAGE(
     assign HEX0 = HEX_out[3:0]; // if we are using a board, we should converte hex values with seven segments. 
     assign HEX1 = HEX_out[7:4];
 
+
  // **TODO: Complete the rest of the pipeline 
  
-    
-   assign {
-            inst_WB,
-            PC_WB,
-            memaddr_WB,
-            regval_WB,  // 
-            regval2_WB,
-            wr_mem_WB,
-            wr_reg_WB,
-            wregno_WB,    
-            // more signals might need                        
-            bus_canary_WB 
+    assign {
+        inst_WB,
+        PC_WB,
+        memaddr_WB,
+        regval_WB,  // register value to be written back
+        regval2_WB,
+        wr_mem_WB,
+        wr_reg_WB,
+        wregno_WB,    
+        // more signals might need                        
+        bus_canary_WB 
     } = from_MEM_latch; 
         
     // write register by sending data to the DE stage 
-    // regs[3] = 32'hFFFFFFFF;    
-        
+
+    assign from_WB_to_DE = {
+        wr_reg_WB,
+        wregno_WB,
+        regval_WB,
+        bus_canary_WB
+    };
+
     // **TODO: Write the code for LEDR here
+
+    always @ (posedge clk or posedge reset) begin
+        // this code need to be completed 
+
+    end  // end always
+
 
     assign LEDR = LEDR_out;
 

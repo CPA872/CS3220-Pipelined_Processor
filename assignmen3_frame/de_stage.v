@@ -43,6 +43,15 @@ module DE_STAGE(
     wire [`DE_latch_WIDTH-1:0]   DE_latch_contents; 
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_DE; 
 
+    // =========================================================
+    // values from MEM stage
+    wire                         wr_reg_from_wb_DE;
+    wire [`DBITS-1:0]            wr_reg_val_from_wb_DE;
+    wire [`REGNOBITS-1:0]        wregno_from_wb_DE;
+    wire [`BUS_CANARY_WIDTH-1:0] bus_canary_from_wb_DE;
+    // =========================================================
+
+
     // **TODO: Complete the rest of the pipeline 
 
     // assign decode signals
@@ -59,7 +68,7 @@ module DE_STAGE(
     assign is_jmp_DE = (op1_DE == 6'b001100); // JAL
     assign rd_mem_DE = (op1_DE == 6'b010010); // LW
     assign wr_mem_DE = (op1_DE == 6'b011010); // SW
-    assign wr_reg_DE = !is_br_DE && !is_jmp_DE && !wr_mem_DE;
+    assign wr_reg_DE = !is_br_DE && !is_jmp_DE && !wr_mem_DE && PC_DE != 32'h00000000;
     assign wregno_DE = (op1_DE == 6'b000000) ? rd_DE : rt_DE; // EXT instructions write to rd
 
     assign regval1_DE = regs[rs_DE];
@@ -69,6 +78,15 @@ module DE_STAGE(
     // assign wire to send the contents of DE latch to other pipeline stages  
     assign DE_latch_out = DE_latch; 
   
+
+    assign {
+        wr_reg_from_wb_DE,
+        wregno_from_wb_DE,
+        wr_reg_val_from_wb_DE,
+        bus_canary_from_wb_DE
+    } = from_WB_to_DE;
+
+
     // Sign extension example 
     SXT mysxt (.IN(imm_DE), .OUT(sxt_imm_DE));
   
@@ -135,6 +153,14 @@ module DE_STAGE(
             DE_latch <= DE_latch_contents;
         end
     end
+
+    // ============ Always for writing value back to registers
+    always @ (posedge clk or posedge reset) begin
+        if (wr_reg_from_wb_DE) begin
+            regs[wregno_from_wb_DE] = wr_reg_val_from_wb_DE;
+        end
+    end
+
 
 endmodule
 

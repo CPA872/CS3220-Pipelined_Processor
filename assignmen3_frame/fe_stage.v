@@ -20,19 +20,17 @@ module FE_STAGE(
     end
 
     /* pipeline latch */ 
-    reg [`FE_latch_WIDTH-1:0] FE_latch;  // FE latch 
+    reg [`FE_latch_WIDTH-1:0] FE_latch; // FE latch 
+    reg [`DBITS-1:0] PC_FE_latch;       // PC latch in the FE stage   // you could use a part of FE_latch as a PC latch as well 
 
-    reg [`DBITS-1:0] PC_FE_latch; // PC latch in the FE stage   // you could use a part of FE_latch as a PC latch as well 
-
-    wire [`INSTBITS-1:0] inst_FE;  // instruction value in the FE stage 
-    wire [`DBITS-1:0] pcplus_FE;  // pc plus value in the FE stage 
-    wire stall_pipe; // signal to indicate when a front-end needs to be stall
+    wire [`INSTBITS-1:0] inst_FE;       // instruction value in the FE stage 
+    wire [`DBITS-1:0] pcplus_FE;        // pc plus value in the FE stage 
+    wire stall_pipe;                    // signal to indicate when a front-end needs to be stall
 
     wire [`FE_latch_WIDTH-1:0] FE_latch_contents; 
 
     // reading instruction from imem 
     assign inst_FE = imem[PC_FE_latch[`IMEMADDRBITS-1:`IMEMWORDBITS]]; // IMEMADDRBITS=16 IMEMWORDBITS = 2
-    //  assign inst_FE = imem[3]; 
     // wire to send the FE latch contents to the DE stage 
     assign FE_latch_out = FE_latch; 
 

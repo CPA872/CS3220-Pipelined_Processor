@@ -51,10 +51,12 @@ module MEM_STAGE(
             dmem[memaddr_MEM[`DMEMADDRBITS-1:`DMEMWORDBITS]] <= regval2_MEM;
     end
  
-
    // **TODO: Complete the rest of the pipeline 
 
-   assign MEM_latch_out = MEM_latch; 
+    assign MEM_latch_out = MEM_latch; 
+
+    // ========== NEW CODE HERE
+    assign regval_MEM = rd_val_MEM; // regval_MEM <-- value read from memory
 
     assign {
         inst_MEM,

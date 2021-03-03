@@ -10,7 +10,7 @@ hexout = []  #['00000000']*64
 mifname = sys.argv[1]
 flag = None if len(sys.argv) < 3 else sys.argv[2]
 DEBUG = flag and flag in dbgflgs
-hexname = mifname.replace('mif','hex')
+hexname = mifname.replace('mif','mem')
 
 if not os.path.isfile(mifname):
    print("File path {} does not exist. Exiting...".format(mifname))

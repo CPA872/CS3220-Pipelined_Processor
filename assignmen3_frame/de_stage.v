@@ -119,13 +119,12 @@ module DE_STAGE(
     }; 
     
     always @ (negedge clk or posedge reset) begin
-        if(reset) 
-        begin
-    	  	regs[0]  <= {`DBITS{1'b0}};
-    	  	regs[1]  <= {`DBITS{1'b0}};
-    	   	regs[2]  <= {`DBITS{1'b0}};
+        if(reset) begin
+            regs[0]  <= {`DBITS{1'b0}};
+            regs[1]  <= {`DBITS{1'b0}};
+            regs[2]  <= {`DBITS{1'b0}};
             regs[3]  <= {`DBITS{1'b0}};
-    	  	regs[4]  <= {`DBITS{1'b0}};
+            regs[4]  <= {`DBITS{1'b0}};
             regs[5]  <= {`DBITS{1'b0}};
             regs[6]  <= {`DBITS{1'b0}};
             regs[7]  <= {`DBITS{1'b0}};
@@ -137,8 +136,10 @@ module DE_STAGE(
             regs[13] <= {`DBITS{1'b0}};
             regs[14] <= {`DBITS{1'b0}};
             regs[15] <= {`DBITS{1'b0}};
-        end 
-
+        end
+        else if (wr_reg_from_wb_DE) begin
+            regs[wregno_from_wb_DE] <= wr_reg_val_from_wb_DE;
+        end
         
     // need to complete register write 
     // else if ... 
@@ -155,12 +156,6 @@ module DE_STAGE(
     end
 
     // ============ Always for writing value back to registers
-    always @ (posedge clk or posedge reset) begin
-        if (wr_reg_from_wb_DE) begin
-            regs[wregno_from_wb_DE] = wr_reg_val_from_wb_DE;
-        end
-    end
-
 
 endmodule
 

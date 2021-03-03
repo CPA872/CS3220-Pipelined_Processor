@@ -8,16 +8,16 @@ module AGEX_STAGE(
     input  [`from_WB_to_AGEX_WIDTH-1:0]  from_WB_to_AGEX,   
     input  [`DE_latch_WIDTH-1:0]         from_DE_latch,
     output [`AGEX_latch_WIDTH-1:0]       AGEX_latch_out,
+
     output [`from_AGEX_to_FE_WIDTH-1:0]  from_AGEX_to_FE,
     output [`from_AGEX_to_DE_WIDTH-1:0]  from_AGEX_to_DE
 );
 
-    reg [`AGEX_latch_WIDTH-1:0] AGEX_latch; 
     // wire to send the AGEX latch contents to other pipeline stages 
+    reg [`AGEX_latch_WIDTH-1:0] AGEX_latch; 
     assign AGEX_latch_out = AGEX_latch;
   
-    wire[`AGEX_latch_WIDTH-1:0] AGEX_latch_contents; 
-  
+    wire [`AGEX_latch_WIDTH-1:0] AGEX_latch_contents; 
    
     wire [`INSTBITS-1:0] inst_AGEX; 
     wire [`DBITS-1:0]    PC_AGEX;
@@ -91,7 +91,7 @@ module AGEX_STAGE(
                 `OP2_LE   : aluout_AGEX = {31'b0, regval1_AGEX <= regval2_AGEX};
                 `OP2_NE   : aluout_AGEX = {31'b0, regval1_AGEX != regval2_AGEX};
 
-        	   // **TODO :  complete the other OP2_*s
+        	   // NEW CODE: completed other OP2_*s
                 `OP2_ADD  : aluout_AGEX = regval1_AGEX + regval2_AGEX;
                 `OP2_AND  : aluout_AGEX = regval1_AGEX & regval2_AGEX;
                 `OP2_OR   : aluout_AGEX = regval1_AGEX | regval2_AGEX;
@@ -133,11 +133,23 @@ module AGEX_STAGE(
                    // more signals might need
             bus_canary_AGEX     
     }; 
+
+
+    assign pctarget_AGEX = (br_cond_AGEX) ? PC_AGEX + 4 + ($signed(sxt_imm_AGEX) << 2) : 32'h00000000;
+
+    assign from_AGEX_to_FE = {
+        br_cond_AGEX,
+        pctarget_AGEX,
+        bus_canary_AGEX
+    };
+
  
     always @ (posedge clk or posedge reset) begin
-        if(reset) begin
+        if (reset) begin
             AGEX_latch <= {`AGEX_latch_WIDTH{1'b0}};
             // might need more code here  
+        end else if (br_cond_AGEX) begin
+            AGEX_latch <= {`AGEX_latch_WIDTH{1'b0}};
         end else begin
             // need to complete 
             AGEX_latch <= AGEX_latch_contents ;

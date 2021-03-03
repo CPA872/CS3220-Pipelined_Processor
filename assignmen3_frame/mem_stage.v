@@ -56,7 +56,8 @@ module MEM_STAGE(
     assign MEM_latch_out = MEM_latch; 
 
     // ========== NEW CODE HERE
-    assign regval_MEM = rd_val_MEM; // regval_MEM <-- value read from memory
+    assign regval_MEM = rd_val_MEM;  // regval_MEM <-- value read from memory
+    // assign regval2_MEM = aluout_MEM; // regval2_MEM <-- ALU result
 
     assign {
         inst_MEM,
@@ -84,6 +85,8 @@ module MEM_STAGE(
             wr_reg_MEM,
             wregno_MEM,    
             // more signals might need    
+            aluout_MEM,
+
             bus_canary_MEM                   
     };
  

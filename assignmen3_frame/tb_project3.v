@@ -37,8 +37,8 @@ module tb_project3();
 
 		always @(posedge CLOCK_50)
 		begin 
-			i = i+1;
-			if (!(i% 100)) begin  
+			i = i + 1;
+			if (!(i % 100)) begin  // checks once per 100 clock cycles
 				$display ("i:%d sim_clk=%b KEY=%b rest:%b hex0:%h hex1:%h ledr:%b",i, CLOCK_50, KEY, RESET_N, HEX0, HEX1, LEDR);
 				// please use this results for only test 
 				if (HEX0 == 'h01) begin 

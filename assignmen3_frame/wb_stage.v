@@ -20,6 +20,7 @@ module WB_STAGE(
     wire [`DBITS-1:0]    regval_WB; 
     wire [`DBITS-1:0]    regval2_WB;
     wire [`DBITS-1:0]    wr_reg_val_WB;   
+    wire [`DBITS-1:0]    aluout_WB;   
 
     wire wr_mem_WB;
     wire wr_reg_WB;
@@ -40,6 +41,8 @@ module WB_STAGE(
 
     assign HEX0 = HEX_out[3:0]; // if we are using a board, we should converte hex values with seven segments. 
     assign HEX1 = HEX_out[7:4];
+    // if load word, write back the memory value, otherwise the ALU value
+    assign wr_reg_val_WB = (inst_WB[31:26] == 6'b010010) ? regval_WB : aluout_WB;
 
 
  // **TODO: Complete the rest of the pipeline 
@@ -48,12 +51,14 @@ module WB_STAGE(
         inst_WB,
         PC_WB,
         memaddr_WB,
-        regval_WB,  // register value to be written back
-        regval2_WB,
+        regval_WB,  // value read from memory
+        regval2_WB, // value from ALU
         wr_mem_WB,
         wr_reg_WB,
         wregno_WB,    
-        // more signals might need                        
+        // more signals might need     
+        aluout_WB,
+
         bus_canary_WB 
     } = from_MEM_latch; 
         
@@ -62,7 +67,7 @@ module WB_STAGE(
     assign from_WB_to_DE = {
         wr_reg_WB,
         wregno_WB,
-        regval_WB,
+        wr_reg_val_WB,
         bus_canary_WB
     };
 

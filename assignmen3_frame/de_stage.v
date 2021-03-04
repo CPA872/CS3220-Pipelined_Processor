@@ -18,8 +18,6 @@ module DE_STAGE(
     /* register file */ 
     reg [`DBITS-1:0] regs [`REGWORDS-1:0];
 
-    reg [       1:0] stall_cycles;  // stall 2 cycles for ALU data dependency
-  
     /* decode signals */
     wire [`INSTBITS-1:0]  inst_DE; 
     wire [`DBITS-1:0]     PC_DE;
@@ -57,11 +55,24 @@ module DE_STAGE(
     // =========================================================
 
 /* THREE QUESTIONS for hazard detection (both AGEX and MEM hazard)
- * 1. writing to register?
- * 2. writing to Rd or Rt?
- * 3. writing to which register?
+ * 1. is reading from register?
+ * 2. reading from Rt or Rs?
+ * 3. is the same register being written to?
 */
-    // ============= Stall Control Signals =====================
+// ============= Stall Control Signals =====================
+    wire                  AGEX_rs_hazard_DE;
+    wire                  AGEX_rt_hazard_DE;
+    wire                  MEM_rs_hazard_DE;
+    wire                  MEM_rt_hazard_DE;
+    wire                  AGEX_hazard_DE;
+    wire                  MEM_hazard_DE;
+    wire                  stall_DE;
+
+    wire                  read_rs_DE;
+    wire                  read_rt_DE;
+    wire                  is_alu_DE;
+    wire                  is_alui_DE;
+
     wire                  wr_1rd_0rt_DE;
 
     wire                  wr_reg_from_agex_DE;
@@ -71,7 +82,7 @@ module DE_STAGE(
     wire                  wr_reg_from_mem_DE;
     wire                  wr_1rd_0rt_from_mem_DE;  
     wire [`REGNOBITS-1:0] wregno_from_mem_DE;
-    // =========================================================
+// =========================================================
 
 
     // **TODO: Complete the rest of the pipeline 
@@ -93,24 +104,39 @@ module DE_STAGE(
     assign wr_reg_DE = !is_br_DE && !is_jmp_DE && !wr_mem_DE && PC_DE != 32'h00000000;
     assign wregno_DE = (op1_DE == 6'b000000) ? rd_DE : rt_DE; // EXT instructions write to rd
 
+    assign is_alu_DE = (op1_DE == 6'b000000);
+    //                            ADDi                ANDi                  ORi                  XORi
+    assign is_alui_DE = (op1_DE == 6'b100000 || op1_DE == 6'b100100 || op1_DE == 6'b100101 || op1_DE == 6'b100110);
+    
     assign regval1_DE = regs[rs_DE];
     assign regval2_DE = regs[rt_DE];
     assign sxt_imm_DE = { {16{imm_DE[15]}}, imm_DE };
 
-    assign wr_1rd_0rt_DE = (op1_DE == `OP1_ALUR);
+    assign wr_1rd_0rt_DE  = (op1_DE == `OP1_ALUR);
 
+//  ================== stall logic =================
+    assign read_rs_DE = is_alu_DE || is_br_DE || is_jmp_DE || is_alui_DE || rd_mem_DE || wr_mem_DE;
+    assign read_rt_DE = is_alu_DE || is_br_DE || wr_mem_DE;
+
+    assign AGEX_rs_hazard_DE = read_rs_DE && wr_reg_from_agex_DE && (rs_DE == wregno_from_agex_DE);
+    assign AGEX_rt_hazard_DE = read_rt_DE && wr_reg_from_agex_DE && (rt_DE == wregno_from_agex_DE);
+    assign AGEX_hazard_DE = AGEX_rs_hazard_DE || AGEX_rt_hazard_DE;
+
+    assign MEM_rs_hazard_DE = read_rs_DE && wr_reg_from_mem_DE && (rs_DE == wregno_from_mem_DE);
+    assign MEM_rt_hazard_DE = read_rt_DE && wr_reg_from_mem_DE && (rt_DE == wregno_from_mem_DE);
+    assign MEM_hazard_DE = MEM_rs_hazard_DE || MEM_rt_hazard_DE;
+
+    assign stall_DE = AGEX_hazard_DE || MEM_hazard_DE;
+//  ================== ========== =================
 
     // assign wire to send the contents of DE latch to other pipeline stages  
     assign DE_latch_out = DE_latch; 
   
-
-
     assign {
         wr_reg_from_agex_DE,
         wr_1rd_0rt_from_agex_DE,  
         wregno_from_agex_DE
     } = from_AGEX_to_DE;
-
 
 
     assign {
@@ -127,7 +153,8 @@ module DE_STAGE(
         bus_canary_from_wb_DE
     } = from_WB_to_DE;
 
-    assign from_DE_to_FE = (is_br_DE | is_jmp_DE);
+    // send stall signal to FE
+    assign from_DE_to_FE = (is_br_DE | is_jmp_DE | stall_DE);// | (stall_cycles > 0));
 
     // Sign extension example 
     SXT mysxt (.IN(imm_DE), .OUT(sxt_imm_DE));
@@ -191,6 +218,8 @@ module DE_STAGE(
         if (reset) begin
             DE_latch <= {`DE_latch_WIDTH{1'b0}};
             // might need more code 
+        end else if (stall_DE) begin
+            DE_latch <= 32'h00000000;
         end else begin
             // need to complete. e.g.) stall? 
             DE_latch <= DE_latch_contents;

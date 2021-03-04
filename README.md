@@ -1,7 +1,10 @@
 ## Next up
-- Implement stall
+- Reiview stall design
 
 ## Update 03/04
+- Passed testcases 1-5
+- Confirmed synthesis and implementation work so far
+- Implemented stall from DE stage. Stalls for 2 cycles for data hazard with AGEX, 1 cycle for data hazard with MEM.
 - Created and assigned necessary signals for stall to work.
 
 ## update 03/03 

@@ -31,6 +31,8 @@ module FE_STAGE(
     wire [`DBITS-1:0]           pcplus_FE;              // pc plus value in the FE stage 
     wire [`FE_latch_WIDTH-1:0]  FE_latch_contents; 
 
+    
+
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_from_agex_FE;
 
     assign FE_latch_out = FE_latch; 

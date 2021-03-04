@@ -34,6 +34,11 @@ module MEM_STAGE(
     wire wr_mem_MEM;
     wire wr_reg_MEM;
 
+//  ========================================================================
+//  For stall detection (stalls one cycle)
+    wire                   wr_1rd_0rt_MEM;  // current instruction writes to Rd or Rt?
+// =========================================================================
+
     wire [`REGNOBITS-1:0]        wregno_MEM;
     wire [`DBITS-1:0 ]           regval_MEM; // need to fill out 
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_MEM;
@@ -69,6 +74,10 @@ module MEM_STAGE(
         wr_reg_MEM,
         wregno_MEM,
 
+// ===== stall detection =========
+        wr_1rd_0rt_MEM,
+// ==========================
+
         // more signals might need
         bus_canary_MEM
     } = from_AGEX_latch;  
@@ -88,6 +97,13 @@ module MEM_STAGE(
             aluout_MEM,
 
             bus_canary_MEM                   
+    };
+
+
+    assign from_MEM_to_DE = {
+        wr_reg_MEM,
+        wr_1rd_0rt_MEM,
+        wregno_MEM
     };
  
     always @ (posedge clk or posedge reset) begin

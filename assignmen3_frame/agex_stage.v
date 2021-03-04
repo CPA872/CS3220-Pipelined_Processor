@@ -44,6 +44,7 @@ module AGEX_STAGE(
     wire [`DBITS-1:0]             pctarget_AGEX; 
     wire [ `BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
 
+    wire                    wr_1rd_0rt_AGEX;    // writes to 1(rd), 0(rt)
 
 // branch target needs to be computed here 
 // computed branch target needs to send to other pipeline stages
@@ -64,6 +65,8 @@ module AGEX_STAGE(
             wr_mem_AGEX,
             wr_reg_AGEX,
             wregno_AGEX, 
+
+
                   // more signals might need
             bus_canary_AGEX
     } = from_DE_latch; 
@@ -80,6 +83,10 @@ module AGEX_STAGE(
             default  : br_cond_AGEX = 1'b0;
         endcase
     end
+
+
+    assign wr_1rd_0rt_AGEX = (op1_AGEX == `OP1_ALUR);
+
 
     always @ (op1_AGEX or op2_AGEX or regval1_AGEX or regval2_AGEX or sxt_imm_AGEX) begin
         if (op1_AGEX == `OP1_ALUR)
@@ -120,6 +127,9 @@ module AGEX_STAGE(
         else
         	aluout_AGEX = {`DBITS{1'b0}};
     end
+
+    
+    assign pctarget_AGEX = (br_cond_AGEX) ? PC_AGEX + 4 + ($signed(sxt_imm_AGEX) << 2) : 32'h00000000;
  
     assign AGEX_latch_contents = {
             inst_AGEX,
@@ -131,16 +141,24 @@ module AGEX_STAGE(
             wr_reg_AGEX,
             wregno_AGEX,
                    // more signals might need
+    // ===== stall detection =========
+            wr_1rd_0rt_AGEX,
+    // ==========================
             bus_canary_AGEX     
     }; 
 
 
-    assign pctarget_AGEX = (br_cond_AGEX) ? PC_AGEX + 4 + ($signed(sxt_imm_AGEX) << 2) : 32'h00000000;
 
     assign from_AGEX_to_FE = {
         br_cond_AGEX,
         pctarget_AGEX,
         bus_canary_AGEX
+    };
+
+    assign from_AGEX_to_DE = {
+        wr_reg_AGEX,
+        wr_1rd_0rt_AGEX,  
+        wregno_AGEX
     };
 
  
@@ -149,7 +167,7 @@ module AGEX_STAGE(
             AGEX_latch <= {`AGEX_latch_WIDTH{1'b0}};
             // might need more code here  
         end else if (br_cond_AGEX) begin
-            AGEX_latch <= {`AGEX_latch_WIDTH{1'b0}};
+            AGEX_latch <= {32'h00000000};
         end else begin
             // need to complete 
             AGEX_latch <= AGEX_latch_contents ;

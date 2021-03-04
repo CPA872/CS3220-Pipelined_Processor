@@ -26,7 +26,7 @@ GoodBR:
 	addi 	s1,s1,0x0
 	addi 	s1,s1,0x1
 	addi 	s1,s1,0x0
-	sw	s1,HEX(zero)
+	sw		s1,HEX(zero)
 	beq 	zero,zero,GoodBR
 
 	andi	zero,zero,0x0

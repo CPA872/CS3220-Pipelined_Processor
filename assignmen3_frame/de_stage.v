@@ -17,6 +17,8 @@ module DE_STAGE(
 
     /* register file */ 
     reg [`DBITS-1:0] regs [`REGWORDS-1:0];
+
+    reg [       1:0] stall_cycles;  // stall 2 cycles for ALU data dependency
   
     /* decode signals */
     wire [`INSTBITS-1:0]  inst_DE; 
@@ -35,9 +37,12 @@ module DE_STAGE(
 
     wire is_br_DE;
     wire is_jmp_DE;
-    wire rd_mem_DE;
-    wire wr_mem_DE;
-    wire wr_reg_DE;
+    wire rd_mem_DE;     // reads from memory
+    wire wr_mem_DE;     // writes to memory
+    wire wr_reg_DE;     // writes to register
+
+    wire dest_rd_DE;    // writes to rd of instruction
+    wire dest_rt_DE;    // writes to rt of instruction
 
     wire [`REGNOBITS-1:0]        wregno_DE; // NO. of register to write to 
     wire [`DE_latch_WIDTH-1:0]   DE_latch_contents; 
@@ -49,6 +54,23 @@ module DE_STAGE(
     wire [`DBITS-1:0]            wr_reg_val_from_wb_DE;
     wire [`REGNOBITS-1:0]        wregno_from_wb_DE;
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_from_wb_DE;
+    // =========================================================
+
+/* THREE QUESTIONS for hazard detection (both AGEX and MEM hazard)
+ * 1. writing to register?
+ * 2. writing to Rd or Rt?
+ * 3. writing to which register?
+*/
+    // ============= Stall Control Signals =====================
+    wire                  wr_1rd_0rt_DE;
+
+    wire                  wr_reg_from_agex_DE;
+    wire                  wr_1rd_0rt_from_agex_DE;  
+    wire [`REGNOBITS-1:0] wregno_from_agex_DE; 
+
+    wire                  wr_reg_from_mem_DE;
+    wire                  wr_1rd_0rt_from_mem_DE;  
+    wire [`REGNOBITS-1:0] wregno_from_mem_DE;
     // =========================================================
 
 
@@ -75,9 +97,28 @@ module DE_STAGE(
     assign regval2_DE = regs[rt_DE];
     assign sxt_imm_DE = { {16{imm_DE[15]}}, imm_DE };
 
+    assign wr_1rd_0rt_DE = (op1_DE == `OP1_ALUR);
+
+
     // assign wire to send the contents of DE latch to other pipeline stages  
     assign DE_latch_out = DE_latch; 
   
+
+
+    assign {
+        wr_reg_from_agex_DE,
+        wr_1rd_0rt_from_agex_DE,  
+        wregno_from_agex_DE
+    } = from_AGEX_to_DE;
+
+
+
+    assign {
+        wr_reg_from_mem_DE,
+        wr_1rd_0rt_from_mem_DE,  
+        wregno_from_mem_DE
+    } = from_MEM_to_DE;
+
 
     assign {
         wr_reg_from_wb_DE,
@@ -138,7 +179,7 @@ module DE_STAGE(
             regs[14] <= {`DBITS{1'b0}};
             regs[15] <= {`DBITS{1'b0}};
         end
-        else if (wr_reg_from_wb_DE) begin
+        else if (wr_reg_from_wb_DE) begin  // write value back to register HERE
             regs[wregno_from_wb_DE] <= wr_reg_val_from_wb_DE;
         end
         
@@ -155,8 +196,6 @@ module DE_STAGE(
             DE_latch <= DE_latch_contents;
         end
     end
-
-    // ============ Always for writing value back to registers
 
 endmodule
 

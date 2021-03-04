@@ -1,8 +1,11 @@
 ## Next up
-- Implement hazard detection and stall
+- Implement stall
+
+## Update 03/04
+- Created and assigned necessary signals for stall to work.
 
 ## update 03/03 
-- fixed branch. Now DE passes a signal to FE indicating a branch, and FE will stall if DE meets a branch instruction
+- fixed branch. Now DE passes a signal to FE indicating a branch, and FE will stall if DE meets a branch instruction (PC doesn't change)
 - Passed test 1 and 2
 - branch works
 

@@ -29,7 +29,7 @@ module WB_STAGE(
     wire [`from_WB_to_DE_WIDTH-1:0] WB_latch_contents;
 
     reg [23:0] HEX_out; 
-    reg [9:0] LEDR_out; 
+    reg [ 9:0] LEDR_out; 
 
 /* HEX0, HEX1 are completed for you.  */ 
     always @ (posedge clk or posedge reset) begin

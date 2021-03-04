@@ -23,9 +23,9 @@ BadPC:
 	.ORG 0x100
 Done:
 	addi	zero,s1,0x0
-	add	s1,s1,s1
+	add		s1,s1,s1
 	addi 	s1,s1,0x1
-	sw	s1,HEX(zero)	; pass the first data hazard
+	sw		s1,HEX(zero)	; pass the first data hazard
 
 	lw	s2,DATA(zero)
 	add	s2,s2,s1

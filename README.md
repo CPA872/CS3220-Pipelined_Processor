@@ -2,6 +2,7 @@
 - Implement hazard detection and stall
 
 ## update 03/03 
+- fixed branch. Now DE passes a signal to FE indicating a branch, and FE will stall if DE meets a branch instruction
 - Passed test 1 and 2
 - branch works
 

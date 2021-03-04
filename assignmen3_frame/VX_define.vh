@@ -18,7 +18,7 @@
 
 // [NOTICE] please note that both imem and dmem use the SAME "IDMEMINITFILE".
 // you need to change this line to change which test file to read 
-`define IDMEMINITFILE  "test1.mem"
+`define IDMEMINITFILE  "test2.mem"
 
 
 `define IMEMADDRBITS  16

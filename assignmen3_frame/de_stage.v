@@ -86,6 +86,7 @@ module DE_STAGE(
         bus_canary_from_wb_DE
     } = from_WB_to_DE;
 
+    assign from_DE_to_FE = (is_br_DE | is_jmp_DE);
 
     // Sign extension example 
     SXT mysxt (.IN(imm_DE), .OUT(sxt_imm_DE));

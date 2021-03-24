@@ -27,8 +27,8 @@ BadStartPC:
 	; Now the actual code
 	.ORG 0x100
 	; Check if the very first instruction is executed correctly
-	addi	s2,s1,7531  ; s2= 1d6b
-	subi	s1,s1,7531	; pseudo instruction. addi s1, s1, (-7531)
+	addi	s2,s1,7531  ; s1 = 1d6b
+	subi	s1,s1,7531	; s1 = 0
 	beq		s1,s2,FirstInstWorks
 BadFirstInst:
 	xor 	zero,zero,zero

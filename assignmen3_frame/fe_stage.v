@@ -72,8 +72,6 @@ module FE_STAGE(
             `BUS_CANARY_VALUE // for an error checking of bus encoding/decoding  
     };
    
-
-
     always @ (posedge clk or posedge reset) begin
         if(reset)
             PC_FE_latch <= `STARTPC;  // STARTPC = 32'h100
@@ -89,14 +87,14 @@ module FE_STAGE(
             PC_FE_latch <= PC_FE_latch;
     end
   
-
+// NOTE: resolve data dependency first, jmp/br stall later!
     always @ (posedge clk or posedge reset) begin
         if(reset) begin 
             FE_latch <= {`FE_latch_WIDTH{1'b0}}; 
+        end else if (dependency_stall_FE == 1'b1) begin // dependency stall, hold current PC
+            FE_latch <= FE_latch;
         end else if (jmp_br_stall_FE) begin  // jump/branch stall, send bubbles
             FE_latch <= 0; 
-        end else if (stall_pipe == 1'b1) begin // dependency stall, hold current PC
-            FE_latch <= FE_latch;
         end else begin  // this is just an example. you need to expand the contents of if/else
             FE_latch <= FE_latch_contents; 
         end  

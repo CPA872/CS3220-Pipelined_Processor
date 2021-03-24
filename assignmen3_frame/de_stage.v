@@ -71,6 +71,7 @@ module DE_STAGE(
     wire                  dependency_stall_DE;
     wire                  jmp_br_stall_DE;
     wire                  stall_DE;
+    reg[1:0]              stall_cycles;
 
     wire                  read_rs_DE;
     wire                  read_rt_DE;
@@ -132,13 +133,14 @@ module DE_STAGE(
     assign MEM_rt_hazard_DE = read_rt_DE && wr_reg_from_mem_DE && (rt_DE == wregno_from_mem_DE);
     assign MEM_hazard_DE    = MEM_rs_hazard_DE || MEM_rt_hazard_DE;
 
-    assign WB_rs_hazard_DE = read_rs_DE && wr_reg_from_wb_DE && (rs_DE == wregno_from_wb_DE);
-    assign WB_rt_hazard_DE = read_rt_DE && wr_reg_from_wb_DE && (rt_DE == wregno_from_wb_DE);
-    assign WB_hazard_DE    = WB_rs_hazard_DE || WB_rt_hazard_DE;
+    // assign WB_rs_hazard_DE = read_rs_DE && wr_reg_from_wb_DE && (rs_DE == wregno_from_wb_DE);
+    // assign WB_rt_hazard_DE = read_rt_DE && wr_reg_from_wb_DE && (rt_DE == wregno_from_wb_DE);
+    // assign WB_hazard_DE    = WB_rs_hazard_DE || WB_rt_hazard_DE;
 
-    assign dependency_stall_DE = AGEX_hazard_DE || MEM_hazard_DE || WB_hazard_DE;
-    assign jmp_br_stall_DE     = is_br_DE || is_jmp_DE;;
-    assign stall_DE            = AGEX_hazard_DE || MEM_hazard_DE || WB_hazard_DE || is_br_DE || is_jmp_DE;
+    assign dependency_stall_DE = AGEX_hazard_DE || MEM_hazard_DE;
+    assign jmp_br_stall_DE     = is_br_DE || is_jmp_DE;
+    assign stall_DE            = AGEX_hazard_DE || MEM_hazard_DE || is_br_DE || is_jmp_DE;
+
 //  ================== ========== =================
 
     // assign wire to send the contents of DE latch to other pipeline stages  
@@ -234,10 +236,10 @@ module DE_STAGE(
         if (reset) begin
             DE_latch <= {`DE_latch_WIDTH{1'b0}};
             // might need more code 
+        end else if (dependency_stall_DE) begin
+            DE_latch <= {`DE_latch_WIDTH{1'b0}};
         end else if (is_jmp_DE || is_br_DE) begin  // need to pass instructions if this is a jump or branch
             DE_latch <= DE_latch_contents;
-        end else if (stall_DE) begin
-            DE_latch <= {`DE_latch_WIDTH{1'b0}};
         end else begin
             // need to complete. e.g.) stall? 
             DE_latch <= DE_latch_contents;
@@ -256,4 +258,3 @@ module SXT(IN, OUT);
 
     assign OUT = {{(OBITS-IBITS){IN[IBITS-1]}}, IN};
 endmodule
-

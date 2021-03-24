@@ -36,7 +36,7 @@ module MEM_STAGE(
 
 //  ========================================================================
 //  For stall detection (stalls one cycle)
-    wire                   wr_1rd_0rt_MEM;  // current instruction writes to Rd or Rt?
+    wire                   wr_1rd_0rs_MEM;  // current instruction writes to Rd or Rt?
 // =========================================================================
 
     wire [`REGNOBITS-1:0]        wregno_MEM;
@@ -75,7 +75,7 @@ module MEM_STAGE(
         wregno_MEM,
 
 // ===== stall detection =========
-        wr_1rd_0rt_MEM,
+        wr_1rd_0rs_MEM,
 // ==========================
 
         // more signals might need
@@ -102,7 +102,7 @@ module MEM_STAGE(
 
     assign from_MEM_to_DE = {
         wr_reg_MEM,
-        wr_1rd_0rt_MEM,
+        wr_1rd_0rs_MEM,
         wregno_MEM
     };
  

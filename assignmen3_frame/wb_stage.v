@@ -40,7 +40,17 @@ module WB_STAGE(
     end
 
     assign HEX0 = HEX_out[3:0]; // if we are using a board, we should converte hex values with seven segments. 
-    assign HEX1 = HEX_out[7:4];
+    assign HEX1 = HEX_out[7:4];    
+
+    always @ (posedge clk or posedge reset) begin
+        if(reset)
+            LEDR_out <= 10'b0011111111;
+        else if(wr_mem_WB && (memaddr_WB == `ADDRLEDR))
+            LEDR_out <= regval2_WB[`LEDRBITS-1:0];
+    end
+
+    assign LEDR = LEDR_out;
+
     // if load word, write back the memory value, otherwise the ALU value
     assign wr_reg_val_WB = (inst_WB[31:26] == 6'b010010) ? regval_WB : aluout_WB;
 
@@ -79,6 +89,6 @@ module WB_STAGE(
     end  // end always
 
 
-    assign LEDR = LEDR_out;
+
 
 endmodule 

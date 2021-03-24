@@ -36,15 +36,14 @@ module AGEX_STAGE(
     wire rd_mem_AGEX;
     wire wr_mem_AGEX;
     wire wr_reg_AGEX;
-
     reg  br_cond_AGEX;
-    reg  [`DBITS-1:0]             aluout_AGEX; 
 
+    reg  [`DBITS-1:0]             aluout_AGEX; 
     wire [`REGNOBITS-1:0]         wregno_AGEX;
     wire [`DBITS-1:0]             pctarget_AGEX; 
     wire [ `BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
 
-    wire                    wr_1rd_0rt_AGEX;    // writes to 1(rd), 0(rt)
+    wire                          wr_1rd_0rs_AGEX;    // writes to 1(rd), 0(rt), NOT USED
 
 // branch target needs to be computed here 
 // computed branch target needs to send to other pipeline stages
@@ -85,7 +84,7 @@ module AGEX_STAGE(
     end
 
 
-    assign wr_1rd_0rt_AGEX = (op1_AGEX == `OP1_ALUR);
+    assign wr_1rd_0rs_AGEX = (op1_AGEX == `OP1_ALUR);
 
 
     always @ (op1_AGEX or op2_AGEX or regval1_AGEX or regval2_AGEX or sxt_imm_AGEX) begin
@@ -142,7 +141,7 @@ module AGEX_STAGE(
             wregno_AGEX,
                    // more signals might need
     // ===== stall detection =========
-            wr_1rd_0rt_AGEX,
+            wr_1rd_0rs_AGEX,
     // ==========================
             bus_canary_AGEX     
     }; 
@@ -157,7 +156,7 @@ module AGEX_STAGE(
 
     assign from_AGEX_to_DE = {
         wr_reg_AGEX,
-        wr_1rd_0rt_AGEX,  
+        wr_1rd_0rs_AGEX,  
         wregno_AGEX
     };
 
@@ -166,8 +165,8 @@ module AGEX_STAGE(
         if (reset) begin
             AGEX_latch <= {`AGEX_latch_WIDTH{1'b0}};
             // might need more code here  
-        end else if (br_cond_AGEX) begin
-            AGEX_latch <= {32'h00000000};
+        // end else if (br_cond_AGEX) begin
+        //     AGEX_latch <= {32'h00000000};
         end else begin
             // need to complete 
             AGEX_latch <= AGEX_latch_contents ;

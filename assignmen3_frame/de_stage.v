@@ -39,9 +39,6 @@ module DE_STAGE(
     wire wr_mem_DE;     // writes to memory
     wire wr_reg_DE;     // writes to register
 
-    wire dest_rd_DE;    // writes to rd of instruction
-    wire dest_rt_DE;    // writes to rt of instruction
-
     wire [`REGNOBITS-1:0]        wregno_DE; // NO. of register to write to 
     wire [`DE_latch_WIDTH-1:0]   DE_latch_contents; 
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_DE; 
@@ -64,8 +61,15 @@ module DE_STAGE(
     wire                  AGEX_rt_hazard_DE;
     wire                  MEM_rs_hazard_DE;
     wire                  MEM_rt_hazard_DE;
+    wire                  WB_rs_hazard_DE;
+    wire                  WB_rt_hazard_DE;
+
     wire                  AGEX_hazard_DE;
     wire                  MEM_hazard_DE;
+    wire                  WB_hazard_DE;
+
+    wire                  dependency_stall_DE;
+    wire                  jmp_br_stall_DE;
     wire                  stall_DE;
 
     wire                  read_rs_DE;
@@ -76,19 +80,18 @@ module DE_STAGE(
     wire                  wr_1rd_0rt_DE;
 
     wire                  wr_reg_from_agex_DE;
-    wire                  wr_1rd_0rt_from_agex_DE;  
+    wire                  wr_1rd_0rs_from_agex_DE;  
     wire [`REGNOBITS-1:0] wregno_from_agex_DE; 
 
     wire                  wr_reg_from_mem_DE;
-    wire                  wr_1rd_0rt_from_mem_DE;  
+    wire                  wr_1rd_0rs_from_mem_DE;  
     wire [`REGNOBITS-1:0] wregno_from_mem_DE;
 // =========================================================
-
 
     // **TODO: Complete the rest of the pipeline 
 
     // assign decode signals
-    assign op1_DE = inst_DE[31:26];  
+    assign op1_DE = inst_DE[31:26];
     assign op2_DE = inst_DE[25:18];
     assign imm_DE = inst_DE[23: 8];
     assign rd_DE  = inst_DE[11: 8];
@@ -97,36 +100,45 @@ module DE_STAGE(
 
     // complete the rest of instruction decoding 
     //                          BEQ                   BLT                     BLE                     BNE
-    assign is_br_DE  = (op1_DE == 6'b001000 || op1_DE == 6'b001001 || op1_DE == 6'b001010 || op1_DE == 6'b001011);
-    assign is_jmp_DE = (op1_DE == 6'b001100); // JAL
-    assign rd_mem_DE = (op1_DE == 6'b010010); // LW
-    assign wr_mem_DE = (op1_DE == 6'b011010); // SW
-    assign wr_reg_DE = !is_br_DE && !is_jmp_DE && !wr_mem_DE && PC_DE != 32'h00000000;
-    assign wregno_DE = (op1_DE == 6'b000000) ? rd_DE : rt_DE; // EXT instructions write to rd
-
-    assign is_alu_DE = (op1_DE == 6'b000000);
-    //                            ADDi                ANDi                  ORi                  XORi
-    assign is_alui_DE = (op1_DE == 6'b100000 || op1_DE == 6'b100100 || op1_DE == 6'b100101 || op1_DE == 6'b100110);
+    assign is_br_DE   = (PC_DE == 0) ? 0 : (op1_DE == 6'b001000 || op1_DE == 6'b001001 || op1_DE == 6'b001010 || op1_DE == 6'b001011);
+    assign is_jmp_DE  = (op1_DE == 6'b001100); // JAL
+    assign rd_mem_DE  = (op1_DE == 6'b010010); // LW
     
-    assign regval1_DE = regs[rs_DE];
+    assign wr_mem_DE  = (op1_DE == 6'b011010); // SW
+    assign wr_reg_DE  = !is_br_DE && !is_jmp_DE && !wr_mem_DE && PC_DE != 32'h00000000;
+
+    //ALU writes to RD, all other wreg instructions writes to RT
+    assign wregno_DE  = (op1_DE == 6'b000000) ? rd_DE : rt_DE;
+
+    assign is_alu_DE  = (op1_DE == 6'b000000);
+    assign is_alui_DE = (op1_DE == 6'b100000 || op1_DE == 6'b100100 || op1_DE == 6'b100101 || op1_DE == 6'b100110);
+    //                            ADDi                ANDi                  ORi                  XORi
+    
+    assign regval1_DE = regs[rs_DE];  // ALUi does RT = RS + IMM   !!!!!!
     assign regval2_DE = regs[rt_DE];
     assign sxt_imm_DE = { {16{imm_DE[15]}}, imm_DE };
 
     assign wr_1rd_0rt_DE  = (op1_DE == `OP1_ALUR);
 
 //  ================== stall logic =================
-    assign read_rs_DE = is_alu_DE || is_br_DE || is_jmp_DE || is_alui_DE || rd_mem_DE || wr_mem_DE;
-    assign read_rt_DE = is_alu_DE || is_br_DE || wr_mem_DE;
+    assign read_rt_DE = is_alu_DE || is_br_DE || is_jmp_DE || is_alui_DE || wr_mem_DE;
+    assign read_rs_DE = is_alu_DE || is_br_DE || wr_mem_DE || rd_mem_DE;
 
     assign AGEX_rs_hazard_DE = read_rs_DE && wr_reg_from_agex_DE && (rs_DE == wregno_from_agex_DE);
     assign AGEX_rt_hazard_DE = read_rt_DE && wr_reg_from_agex_DE && (rt_DE == wregno_from_agex_DE);
-    assign AGEX_hazard_DE = AGEX_rs_hazard_DE || AGEX_rt_hazard_DE;
+    assign AGEX_hazard_DE    = AGEX_rs_hazard_DE || AGEX_rt_hazard_DE;
 
     assign MEM_rs_hazard_DE = read_rs_DE && wr_reg_from_mem_DE && (rs_DE == wregno_from_mem_DE);
     assign MEM_rt_hazard_DE = read_rt_DE && wr_reg_from_mem_DE && (rt_DE == wregno_from_mem_DE);
-    assign MEM_hazard_DE = MEM_rs_hazard_DE || MEM_rt_hazard_DE;
+    assign MEM_hazard_DE    = MEM_rs_hazard_DE || MEM_rt_hazard_DE;
 
-    assign stall_DE = AGEX_hazard_DE || MEM_hazard_DE;
+    assign WB_rs_hazard_DE = read_rs_DE && wr_reg_from_wb_DE && (rs_DE == wregno_from_wb_DE);
+    assign WB_rt_hazard_DE = read_rt_DE && wr_reg_from_wb_DE && (rt_DE == wregno_from_wb_DE);
+    assign WB_hazard_DE    = WB_rs_hazard_DE || WB_rt_hazard_DE;
+
+    assign dependency_stall_DE = AGEX_hazard_DE || MEM_hazard_DE || WB_hazard_DE;
+    assign jmp_br_stall_DE     = is_br_DE || is_jmp_DE;;
+    assign stall_DE            = AGEX_hazard_DE || MEM_hazard_DE || WB_hazard_DE || is_br_DE || is_jmp_DE;
 //  ================== ========== =================
 
     // assign wire to send the contents of DE latch to other pipeline stages  
@@ -134,14 +146,14 @@ module DE_STAGE(
   
     assign {
         wr_reg_from_agex_DE,
-        wr_1rd_0rt_from_agex_DE,  
+        wr_1rd_0rs_from_agex_DE,  
         wregno_from_agex_DE
     } = from_AGEX_to_DE;
 
 
     assign {
         wr_reg_from_mem_DE,
-        wr_1rd_0rt_from_mem_DE,  
+        wr_1rd_0rs_from_mem_DE,  
         wregno_from_mem_DE
     } = from_MEM_to_DE;
 
@@ -153,8 +165,12 @@ module DE_STAGE(
         bus_canary_from_wb_DE
     } = from_WB_to_DE;
 
-    // send stall signal to FE
-    assign from_DE_to_FE = (is_br_DE | is_jmp_DE | stall_DE);// | (stall_cycles > 0));
+    // send stall signals to FE
+    assign from_DE_to_FE = {
+        dependency_stall_DE,
+        jmp_br_stall_DE
+    };
+        
 
     // Sign extension example 
     SXT mysxt (.IN(imm_DE), .OUT(sxt_imm_DE));
@@ -218,8 +234,10 @@ module DE_STAGE(
         if (reset) begin
             DE_latch <= {`DE_latch_WIDTH{1'b0}};
             // might need more code 
+        end else if (is_jmp_DE || is_br_DE) begin  // need to pass instructions if this is a jump or branch
+            DE_latch <= DE_latch_contents;
         end else if (stall_DE) begin
-            DE_latch <= 32'h00000000;
+            DE_latch <= {`DE_latch_WIDTH{1'b0}};
         end else begin
             // need to complete. e.g.) stall? 
             DE_latch <= DE_latch_contents;

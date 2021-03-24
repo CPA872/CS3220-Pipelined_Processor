@@ -18,7 +18,7 @@
 
 // [NOTICE] please note that both imem and dmem use the SAME "IDMEMINITFILE".
 // you need to change this line to change which test file to read 
-`define IDMEMINITFILE  "test5.mem"
+`define IDMEMINITFILE  "testall.mem"
 
 
 `define IMEMADDRBITS  16
@@ -76,7 +76,7 @@
 `define MEM_latch_WIDTH   (`INSTBITS+`DBITS+`DBITS +`DBITS + `DBITS + `DBITS + 1 + 1 + `REGNOBITS + `BUS_CANARY_WIDTH)
 `define WB_latch_WIDTH    (1 + `REGNOBITS + `DBITS + `BUS_CANARY_WIDTH) 
 
-`define from_DE_to_FE_WIDTH     1 
+`define from_DE_to_FE_WIDTH     2 
 `define from_AGEX_to_FE_WIDTH   (1 + `DBITS + `BUS_CANARY_WIDTH) 
 `define from_MEM_to_FE_WIDTH    (1 + 1 + `REGNOBITS)
 `define from_WB_to_FE_WIDTH     4

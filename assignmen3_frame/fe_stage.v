@@ -23,7 +23,10 @@ module FE_STAGE(
     reg [`FE_latch_WIDTH-1:0]   FE_latch; // FE latch 
     reg [`DBITS-1:0]            PC_FE_latch;       // PC latch in the FE stage   // you could use a part of FE_latch as a PC latch as well 
 
-    wire                        stall_pipe;             // signal to indicate when a front-end needs to be stall
+    wire                        dependency_stall_FE;
+    wire                        jmp_br_stall_FE;             // signal to indicate when a front-end needs to be stall
+    wire                        stall_pipe;
+
     wire                        jmp_br_from_de_FE;      // if the instruction is decoded as a jump or branch
     wire                        br_cond_from_agex_FE;   // is branch taken?
     wire [`DBITS-1:0]           pctarget_from_agex_FE;            //
@@ -31,7 +34,6 @@ module FE_STAGE(
     wire [`DBITS-1:0]           pcplus_FE;              // pc plus value in the FE stage 
     wire [`FE_latch_WIDTH-1:0]  FE_latch_contents; 
 
-    
 
     wire [`BUS_CANARY_WIDTH-1:0] bus_canary_from_agex_FE;
 
@@ -44,7 +46,14 @@ module FE_STAGE(
         bus_canary_from_agex_FE
     } = from_AGEX_to_FE;
 
-    assign jmp_br_from_de_FE = from_DE_to_FE;
+
+
+    assign {
+        dependency_stall_FE,
+        jmp_br_stall_FE
+    } = from_DE_to_FE; // you need to complete the logic to compute stall FE stage 
+
+    assign stall_pipe = dependency_stall_FE || jmp_br_stall_FE;
 
     // reading instruction from imem 
     assign inst_FE = imem[PC_FE_latch[`IMEMADDRBITS-1:`IMEMWORDBITS]]; // IMEMADDRBITS=16 IMEMWORDBITS = 2
@@ -63,17 +72,19 @@ module FE_STAGE(
             `BUS_CANARY_VALUE // for an error checking of bus encoding/decoding  
     };
    
-    assign stall_pipe = jmp_br_from_de_FE; // you need to complete the logic to compute stall FE stage 
+
 
     always @ (posedge clk or posedge reset) begin
         if(reset)
             PC_FE_latch <= `STARTPC;  // STARTPC = 32'h100
-        else if (!stall_pipe && !br_cond_from_agex_FE)
+        else if (!stall_pipe && !br_cond_from_agex_FE)  // continue to next instruction (pc + 4)
             PC_FE_latch <= pcplus_FE;
-        else if (!stall_pipe && br_cond_from_agex_FE)
+        else if (!stall_pipe && br_cond_from_agex_FE)   // jump or branch
             PC_FE_latch <= pctarget_from_agex_FE;
-        else if (stall_pipe == 1'b1)  // when stall, hold PC at place 
+        else if (stall_pipe == 1'b1)  // dependency stall, hold current PC
             PC_FE_latch <= PC_FE_latch;
+        // else if (jmp_br_stall_FE == 1'b1) // jump / branch stall, send zeros to 
+        //     PC_FE_latch <= 32'h00000000;
         else
             PC_FE_latch <= PC_FE_latch;
     end
@@ -82,6 +93,10 @@ module FE_STAGE(
     always @ (posedge clk or posedge reset) begin
         if(reset) begin 
             FE_latch <= {`FE_latch_WIDTH{1'b0}}; 
+        end else if (jmp_br_stall_FE) begin  // jump/branch stall, send bubbles
+            FE_latch <= 0; 
+        end else if (stall_pipe == 1'b1) begin // dependency stall, hold current PC
+            FE_latch <= FE_latch;
         end else begin  // this is just an example. you need to expand the contents of if/else
             FE_latch <= FE_latch_contents; 
         end  

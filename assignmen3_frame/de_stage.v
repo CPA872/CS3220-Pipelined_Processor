@@ -122,8 +122,8 @@ module DE_STAGE(
     assign wr_1rd_0rt_DE  = (op1_DE == `OP1_ALUR);
 
 //  ================== stall logic =================
-    assign read_rt_DE = is_alu_DE || is_br_DE || is_jmp_DE || is_alui_DE || wr_mem_DE;
-    assign read_rs_DE = is_alu_DE || is_br_DE || wr_mem_DE || rd_mem_DE;
+    assign read_rt_DE = is_alu_DE || is_br_DE || is_jmp_DE || wr_mem_DE;
+    assign read_rs_DE = is_alu_DE || is_alui_DE || is_br_DE || wr_mem_DE || rd_mem_DE;
 
     assign AGEX_rs_hazard_DE = read_rs_DE && wr_reg_from_agex_DE && (rs_DE == wregno_from_agex_DE);
     assign AGEX_rt_hazard_DE = read_rt_DE && wr_reg_from_agex_DE && (rt_DE == wregno_from_agex_DE);

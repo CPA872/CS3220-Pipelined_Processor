@@ -104,6 +104,7 @@ module AGEX_STAGE(
                 `OP2_XOR  : aluout_AGEX = regval1_AGEX ^ regval2_AGEX;
                 `OP2_SUB  : aluout_AGEX = regval1_AGEX - regval2_AGEX;
                 `OP2_NAND : aluout_AGEX = ~(regval1_AGEX & regval2_AGEX);
+                `OP2_NOR  : aluout_AGEX = ~(regval1_AGEX | regval2_AGEX);
                 `OP2_NXOR : aluout_AGEX = ~(regval1_AGEX ^ regval2_AGEX);
                 `OP2_LSHF : aluout_AGEX = regval1_AGEX << regval2_AGEX;
                 `OP2_RSHF : aluout_AGEX = regval1_AGEX >> regval2_AGEX;

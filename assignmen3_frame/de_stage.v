@@ -100,15 +100,15 @@ module DE_STAGE(
     assign rt_DE  = inst_DE[ 3: 0];
 
     // complete the rest of instruction decoding 
-    //                          BEQ                   BLT                     BLE                     BNE
+    //                                              BEQ                   BLT                     BLE                     BNE
     assign is_br_DE   = (PC_DE == 0) ? 0 : (op1_DE == 6'b001000 || op1_DE == 6'b001001 || op1_DE == 6'b001010 || op1_DE == 6'b001011);
     assign is_jmp_DE  = (op1_DE == 6'b001100); // JAL
     assign rd_mem_DE  = (op1_DE == 6'b010010); // LW
     
     assign wr_mem_DE  = (op1_DE == 6'b011010); // SW
-    assign wr_reg_DE  = !is_br_DE && !is_jmp_DE && !wr_mem_DE && PC_DE != 32'h00000000;
+    assign wr_reg_DE  = !is_br_DE && !wr_mem_DE && PC_DE != 32'h00000000;  // is NOT branch, SW, 
 
-    //ALU writes to RD, all other wreg instructions writes to RT
+    // ALU writes to RD, all other wreg instructions writes to RT
     assign wregno_DE  = (op1_DE == 6'b000000) ? rd_DE : rt_DE;
 
     assign is_alu_DE  = (op1_DE == 6'b000000);

@@ -97,7 +97,6 @@ module AGEX_STAGE(
                 `OP2_LE   : aluout_AGEX = {31'b0, regval1_AGEX <= regval2_AGEX};
                 `OP2_NE   : aluout_AGEX = {31'b0, regval1_AGEX != regval2_AGEX};
 
-        	   // NEW CODE: completed other OP2_*s
                 `OP2_ADD  : aluout_AGEX = regval1_AGEX + regval2_AGEX;
                 `OP2_AND  : aluout_AGEX = regval1_AGEX & regval2_AGEX;
                 `OP2_OR   : aluout_AGEX = regval1_AGEX | regval2_AGEX;
@@ -123,13 +122,15 @@ module AGEX_STAGE(
         	aluout_AGEX = regval1_AGEX | sxt_imm_AGEX;
         else if(op1_AGEX == `OP1_XORI)
         	aluout_AGEX = regval1_AGEX ^ sxt_imm_AGEX;
+        else if(op1_AGEX == `OP1_JAL)  // JAL: [ Rt = PC+4, PC = Rs + 4sxt(Imm) ]
+            aluout_AGEX = PC_AGEX + 4; 
         // add OP1_JAL case 
         else
         	aluout_AGEX = {`DBITS{1'b0}};
     end
 
     
-    assign pctarget_AGEX = (br_cond_AGEX) ? PC_AGEX + 4 + ($signed(sxt_imm_AGEX) << 2) : 32'h00000000;
+    assign pctarget_AGEX = (br_cond_AGEX || is_jmp_AGEX) ? PC_AGEX + 4 + ($signed(sxt_imm_AGEX) << 2) : 32'h00000000;
  
     assign AGEX_latch_contents = {
             inst_AGEX,

@@ -98,6 +98,10 @@ module DE_STAGE(
     wire                  reg2_mem_fwd_DE;
 // =========================================================
 
+    wire                        pc_pred_taken_DE;       // taken prediction from BTB
+    wire [`DBITS-1:0]           pc_pred_DE;             // predicted PC from BTB
+    wire                        flush_DE;
+
 
     // **TODO: Complete the rest of the pipeline 
 
@@ -160,8 +164,8 @@ module DE_STAGE(
 
     // Now the only dependency stall is having a LW instruction immediately preceding
     assign dependency_stall_DE = AGEX_hazard_DE && AGEX_rd_mem_DE;
-    assign jmp_br_stall_DE     = is_br_DE || is_jmp_DE;
-    assign stall_DE            = is_br_DE || is_jmp_DE;
+    assign jmp_br_stall_DE     = 0; //is_br_DE || is_jmp_DE;
+    assign stall_DE            = jmp_br_stall_DE;
 
 
 // ========  Register value assignment: to be fed into ALU as A_input and B_input
@@ -177,7 +181,8 @@ module DE_STAGE(
         wr_1rd_0rs_from_agex_DE,  
         wregno_from_agex_DE,
         aluout_from_agex_DE,
-        AGEX_rd_mem_DE
+        AGEX_rd_mem_DE,
+        flush_DE
     } = from_AGEX_to_DE;
 
 
@@ -210,6 +215,8 @@ module DE_STAGE(
             inst_DE,
             PC_DE, 
             pcplus_DE,
+            pc_pred_taken_DE,
+            pc_pred_DE,
             bus_canary_DE 
     } = from_FE_latch;  // based on the contents of the latch, you can decode the content 
 
@@ -228,6 +235,8 @@ module DE_STAGE(
             wr_mem_DE,
             wr_reg_DE,
             wregno_DE,
+            pc_pred_taken_DE,
+            pc_pred_DE,
 
             // more signals might need
             bus_canary_DE 
@@ -258,11 +267,8 @@ module DE_STAGE(
     end
 
 
-
-
-
     always @ (posedge clk or posedge reset) begin
-        if (reset) begin
+        if (reset || flush_DE) begin
             DE_latch <= {`DE_latch_WIDTH{1'b0}};
             // might need more code 
         end 

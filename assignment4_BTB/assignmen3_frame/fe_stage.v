@@ -41,6 +41,7 @@ module FE_STAGE(
 
 //  ===================== Branch Target Buffer ==========================================
     wire [`IMEMADDRBITS-1:2]    pc_index_FE;            // index of PC address in memory
+    wire                        use_pred_FE;            // pcplus gets BTB prediction
 
     wire                        is_branch_FE;
     wire [`OP1BITS-1:0]         op1_FE;
@@ -52,6 +53,8 @@ module FE_STAGE(
     wire                        update_BTB_from_wb_FE;
     wire [2:0]                  update_index_from_wb_FE;
     wire [`DBITS:0]             new_BTB_entry_from_wb_FE;
+
+    wire                        flush_FE;
 //  ======================================================================================
 
     assign {
@@ -67,6 +70,7 @@ module FE_STAGE(
     assign {
         br_cond_from_agex_FE,
         pctarget_from_agex_FE,
+        flush_FE,
         bus_canary_from_agex_FE
     } = from_AGEX_to_FE;
 
@@ -85,8 +89,9 @@ module FE_STAGE(
     assign inst_FE      = imem[pc_index_FE];        // IMEMADDRBITS=16 IMEMWORDBITS = 2
     assign stall_pipe   = dependency_stall_FE || jmp_br_stall_FE;
 
-    // if is branch inst AND BTB suggests taken, use predicted PC, else PC + 4
-    assign pcplus_FE    = (is_branch_FE && pc_pred_taken_FE) ? pc_pred_FE : PC_FE_latch + `INSTSIZE;
+    // if is branch inst AND BTB is valid AND BTB suggests taken, use predicted PC, else PC + 4
+    assign use_pred_FE  = is_branch_FE && pc_pred_taken_FE && (pc_pred_FE != 32'b0);
+    assign pcplus_FE    = use_pred_FE ? pc_pred_FE : PC_FE_latch + `INSTSIZE;
 
 
     assign FE_latch_out = FE_latch; 
@@ -95,6 +100,8 @@ module FE_STAGE(
             inst_FE, 
             PC_FE_latch, 
             pcplus_FE,          // please feel free to add more signals such as valid bits etc. 
+            pc_pred_taken_FE,
+            pc_pred_FE,
             `BUS_CANARY_VALUE // for an error checking of bus encoding/decoding  
     };
 
@@ -110,7 +117,7 @@ module FE_STAGE(
             BTB[6] <= 33'h0;
             BTB[7] <= 33'h0;
         end
-        else if (update_BTB_from_wb_FE) begin
+        else if (update_BTB_from_wb_FE) begin  // updates BTB with br_cond and pctarget from WB
             BTB[update_index_from_wb_FE] <= new_BTB_entry_from_wb_FE;
         end
     end
@@ -125,15 +132,13 @@ module FE_STAGE(
             PC_FE_latch <= pctarget_from_agex_FE;
         else if (stall_pipe == 1'b1)  // dependency stall, hold current PC
             PC_FE_latch <= PC_FE_latch;
-        // else if (jmp_br_stall_FE == 1'b1) // jump / branch stall, send zeros to 
-        //     PC_FE_latch <= 32'h00000000;
         else
             PC_FE_latch <= PC_FE_latch;
     end
   
 // NOTE: resolve data dependency first, jmp/br stall later!
     always @ (posedge clk or posedge reset) begin
-        if(reset) begin 
+        if (reset || flush_FE) begin 
             FE_latch <= {`FE_latch_WIDTH{1'b0}}; 
         end 
         else if (dependency_stall_FE == 1'b1) begin // dependency stall, hold current PC

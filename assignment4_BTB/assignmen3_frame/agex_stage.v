@@ -41,12 +41,18 @@ module AGEX_STAGE(
     reg  [`DBITS-1:0]             aluout_AGEX; 
     wire [`REGNOBITS-1:0]         wregno_AGEX;
     wire [`DBITS-1:0]             pctarget_AGEX; 
-    wire [ `BUS_CANARY_WIDTH-1:0] bus_canary_AGEX; 
+    wire [`BUS_CANARY_WIDTH-1:0]  bus_canary_AGEX; 
 
     wire                          wr_1rd_0rs_AGEX;    // writes to 1(rd), 0(rt), NOT USED
 
-// branch target needs to be computed here 
-// computed branch target needs to send to other pipeline stages
+// ======================= Branch Prediction Control =================
+    wire                          flush_AGEX;
+    wire                          pc_pred_taken_AGEX;       // taken prediction from BTB
+    wire [`DBITS-1:0]             pc_pred_AGEX;             // predicted PC from BTB
+
+
+    // Misprediction 
+    assign flush_AGEX = is_br_AGEX && ((pc_pred_taken_AGEX != br_cond_AGEX) || (pc_pred_AGEX != pctarget_AGEX));
 
     assign {
             inst_AGEX,
@@ -65,6 +71,8 @@ module AGEX_STAGE(
             wr_reg_AGEX,
             wregno_AGEX, 
 
+            pc_pred_taken_AGEX,
+            pc_pred_AGEX,
 
                   // more signals might need
             bus_canary_AGEX
@@ -154,6 +162,7 @@ module AGEX_STAGE(
     assign from_AGEX_to_FE = {
         br_cond_AGEX,
         pctarget_AGEX,
+        flush_AGEX,
         bus_canary_AGEX
     };
 
@@ -162,7 +171,8 @@ module AGEX_STAGE(
         wr_1rd_0rs_AGEX,  
         wregno_AGEX,
         aluout_AGEX,
-        rd_mem_AGEX
+        rd_mem_AGEX,
+        flush_AGEX
     };
 
  
